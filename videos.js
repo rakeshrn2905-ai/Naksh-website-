@@ -6,7 +6,7 @@
  */
 window.SITE = {
   // Shown as the logo in the top-left corner.
-  siteName: "NAKSH",
+  siteName: "A Year of Us",
 
   // Shown on the lock screen and at the bottom of the page.
   welcomeTitle: "Hi love ❤",
