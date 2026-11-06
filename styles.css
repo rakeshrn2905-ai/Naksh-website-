@@ -245,12 +245,16 @@ a { color: inherit; text-decoration: none; }
 .footer .logo, .footer [data-site-name] { font-size: 14px; }
 
 @media (max-width: 600px) {
-  .nav { gap: 14px; }
-  .nav-links { gap: 12px; font-size: 14px; white-space: nowrap; }
-  .search { padding: 6px 10px; min-width: 0; }
-  .search input { width: 100%; min-width: 0; }
-  .nav:focus-within .nav-links { display: none; }
+  .nav { gap: 10px 14px; flex-wrap: wrap; padding-top: max(14px, env(safe-area-inset-top)); }
+  .nav > .logo { width: 100%; }
+  .nav-links { gap: 18px; font-size: 14px; white-space: nowrap; }
+  .gate .btn { justify-content: center; }
+  .search { padding: 6px 10px; min-width: 0; gap: 0; }
+  .search input { width: 0; min-width: 0; transition: width .2s; }
+  .search:focus-within { gap: 8px; }
+  .search:focus-within input, .search input:not(:placeholder-shown) { width: 100%; }
   .search:focus-within { flex: 1; }
+  .nav:focus-within .nav-links { display: none; }
   .gate form { flex-direction: column; }
   .hero::after { background: linear-gradient(to top, var(--bg) 5%, rgba(13,10,15,.4) 60%, rgba(13,10,15,.2)); }
   .next-up { right: 16px; bottom: 80px; }
