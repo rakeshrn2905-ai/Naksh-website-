@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0d0a0f" />
+  <title>Our Movies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Lock screen -->
+  <section id="gate" class="gate" hidden>
+    <div class="gate-card">
+      <div class="logo gate-logo" data-site-name></div>
+      <h1 id="gate-title"></h1>
+      <p id="gate-message"></p>
+      <form id="gate-form" autocomplete="off">
+        <label for="gate-input" class="sr-only">Password</label>
+        <input id="gate-input" type="password" placeholder="Password" autocomplete="current-password" />
+        <button type="submit" class="btn btn-primary">Come in</button>
+      </form>
+      <p id="gate-error" class="gate-error" role="alert"></p>
+    </div>
+  </section>
+
+  <div id="app" hidden>
+    <header id="nav" class="nav">
+      <a href="#" class="logo" data-site-name data-go="home"></a>
+      <nav class="nav-links">
+        <a href="#" data-go="home" class="active">Home</a>
+        <a href="#" data-go="list">My List</a>
+      </nav>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="search" placeholder="Search" aria-label="Search videos" />
+      </div>
+    </header>
+
+    <main>
+      <section id="hero" class="hero"></section>
+      <section id="rows" class="rows"></section>
+      <section id="grid-view" class="grid-view" hidden>
+        <h2 id="grid-title"></h2>
+        <div id="grid" class="grid"></div>
+        <p id="grid-empty" class="empty" hidden></p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span data-site-name></span> · <span id="footer-message"></span>
+    </footer>
+  </div>
+
+  <!-- Details popup -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="icon-btn modal-close" data-close aria-label="Close">✕</button>
+      <div class="modal-media"><img id="modal-img" alt="" /></div>
+      <div class="modal-body">
+        <h2 id="modal-title"></h2>
+        <div id="modal-meta" class="meta"></div>
+        <div class="modal-actions">
+          <button id="modal-play" class="btn btn-primary"><span class="play-ico"></span> Play</button>
+          <button id="modal-list" class="btn btn-ghost"></button>
+        </div>
+        <p id="modal-desc"></p>
+        <h3 id="modal-more-title">More like this</h3>
+        <div id="modal-more" class="grid small"></div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Video player -->
+  <div id="player" class="player" hidden>
+    <video id="video" playsinline controls preload="auto"></video>
+    <div class="player-top">
+      <button id="player-back" class="icon-btn" aria-label="Back">←</button>
+      <div id="player-title" class="player-title"></div>
+    </div>
+    <div id="next-up" class="next-up" hidden>
+      <img id="next-img" alt="" />
+      <div>
+        <div class="next-label">Up next in <span id="next-count">8</span></div>
+        <div id="next-title" class="next-title"></div>
+        <div class="next-actions">
+          <button id="next-play" class="btn btn-primary btn-sm">Play now</button>
+          <button id="next-cancel" class="btn btn-ghost btn-sm">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/hls.min.js" defer></script>
+  <script src="videos.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
