@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#0d0a0f" />
+  <title>Upload · All Our Yesterdays</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="upload-page">
+  <header class="nav solid">
+    <a href="./" class="logo" data-site-name></a>
+    <nav class="nav-links">
+      <a href="./">Back to site</a>
+    </nav>
+  </header>
+
+  <main class="up-main">
+    <h1 class="up-title">Add videos &amp; photos</h1>
+    <p class="up-lead">Choose a row (for example a year), pick your files, give them a title and date, then upload.
+      Everything is stored privately and only appears for people who can log in.</p>
+
+    <form id="up-form" class="up-form">
+      <div class="up-field">
+        <label for="up-folder">Row</label>
+        <input id="up-folder" list="up-folders" placeholder="e.g. 2015" maxlength="40" required />
+        <datalist id="up-folders"></datalist>
+        <small>Each row on the home page is one of these. Using the year keeps your story in order.</small>
+      </div>
+
+      <div class="up-field">
+        <label for="up-files">Videos and photos</label>
+        <input id="up-files" type="file" multiple accept="video/mp4,video/quicktime,video/webm,.mp4,.m4v,.mov,.webm,image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,.heic" />
+      </div>
+
+      <label class="up-check"><input id="up-resize" type="checkbox" checked /> Make photos smaller so they load faster (recommended)</label>
+
+      <ol id="up-list" class="up-list"></ol>
+
+      <div class="up-actions">
+        <button id="up-go" type="submit" class="btn btn-primary" disabled>Upload</button>
+        <span id="up-summary" class="up-summary" role="status"></span>
+      </div>
+    </form>
+
+    <section class="up-existing">
+      <h2>Already on the site</h2>
+      <p id="up-existing-empty" class="empty" hidden>Nothing yet.</p>
+      <div id="up-existing"></div>
+    </section>
+  </main>
+
+  <script src="site.js" defer></script>
+  <script src="upload.js" defer></script>
+</body>
+</html>
