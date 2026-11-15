@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "naksh-website",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+
+  // The website files. "run_worker_first" makes every request pass the login
+  // check in worker/index.js before any file is served.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+
+  // Private storage for the videos and photos.
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "naksh" }
+  ],
+
+  // The login settings (ACCESS_TEAM_DOMAIN, ACCESS_AUD, ALLOWED_EMAILS,
+  // ADMIN_EMAILS) are set in the Cloudflare dashboard. Keep them on each deploy.
+  "keep_vars": true,
+
+  "workers_dev": true,
+  // No extra test addresses: only the one protected address exists.
+  "preview_urls": false,
+
+  "observability": { "enabled": true }
+}

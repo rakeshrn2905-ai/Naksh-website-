@@ -4,7 +4,7 @@ A private, streaming-style website for our videos and photos: a row for each yea
 a full-screen video player that remembers where you stopped, a photo viewer,
 "My List", search, and an upload page.
 
-It runs entirely on Cloudflare, behind a real login. Only the email addresses you
+It runs entirely on Cloudflare (as a Worker), behind a real login. Only the email addresses you
 approve can see anything: no page, thumbnail, video or photo is sent to anyone else.
 
 ---
@@ -25,49 +25,39 @@ The site is only as secure as the email inboxes that can log in.
 
 ---
 
-## One-time setup (about 30 minutes)
+## One-time setup
 
-You need: a free Cloudflare account, and this GitHub repository.
+The site runs as a **Cloudflare Worker** (`naksh-website`), connected to this GitHub repo.
+Every push to `master` rebuilds and redeploys it automatically. The storage bucket and
+the security settings are declared in `wrangler.jsonc`, so there's nothing to connect by hand.
 
-### 1. Create your Cloudflare account
-1. Sign up at **dash.cloudflare.com** (free plan).
-2. Turn on two-step verification: **profile icon → Profile → Authentication**.
+### 1. Cloudflare account
+Sign up at **dash.cloudflare.com** (free plan) and turn on two-step verification:
+**profile icon → Profile → Authentication**.
 
-### 2. Create the private storage bucket
-1. In the left menu open **R2 Object Storage**. Cloudflare asks for a payment card to
-   activate R2, even though the first 10 GB are free.
-2. **Create bucket** → name it `all-our-yesterdays-media` → **Create**.
-3. Leave **Public access** turned **off**. Don't turn on the `r2.dev` URL or add a custom domain to the bucket.
+### 2. Private storage bucket
+**R2 Object Storage → Create bucket**, named **`naksh`** (the name used in `wrangler.jsonc`).
+Leave **Public access** turned **off**.
 
-### 3. Put the website online
-1. Open **Workers & Pages → Create → Pages → Connect to Git**.
-2. Connect GitHub and choose **this repository** (allow Cloudflare to see this private repo).
-3. Build settings:
-   - Framework preset: **None**
-   - Build command: *(leave empty)*
-   - Build output directory: **`public`**
-4. Project name: e.g. `all-our-yesterdays` (your address becomes `all-our-yesterdays.pages.dev`).
-5. **Save and Deploy**. It will say *"The login isn't set up yet"* until the steps below are done. That's expected.
+### 3. The website (Worker)
+**Workers & Pages → Create → Import a repository** → GitHub → this repo.
+- Worker name: **`naksh-website`** (must match `name` in `wrangler.jsonc`)
+- Branch: **`master`**
+- Build command: *(empty)*. Deploy command: **`npx wrangler deploy`** (the default)
 
-### 4. Connect the storage to the website
-Pages project → **Settings → Bindings → Add → R2 bucket**:
-- Variable name: **`MEDIA`**
-- Bucket: **`all-our-yesterdays-media`**
+Until the login is configured, every address shows *"This site is private. The login isn't set up yet."*
 
-### 5. Set up the login (Cloudflare Access)
-1. In the left menu open **Zero Trust**. The first time, pick a **team name** (e.g. `allouryesterdays`;
-   your login address becomes `allouryesterdays.cloudflareaccess.com`) and choose the **Free** plan.
-2. **Access → Applications → Add an application → Self-hosted**.
-3. Application name: `All Our Yesterdays`. Session duration: e.g. **1 month**.
-4. Add two public hostnames:
-   - `all-our-yesterdays.pages.dev`
-   - `*.all-our-yesterdays.pages.dev` (this protects test versions too)
-5. Add a policy: **Action: Allow**, **Include → Emails** → her email and yours.
-6. Login methods: **One-time PIN** is on by default. If she uses Gmail you can also add **Google**.
-7. Save. Open the application again and copy its **Application Audience (AUD) Tag**.
+### 4. Turn on the login (Cloudflare Access)
+1. **Workers & Pages → naksh-website → Settings → Domains & Routes**.
+2. Next to the **workers.dev** address, choose **Enable Cloudflare Access**.
+3. Choose **Manage Cloudflare Access**. In the policy, set **Include → Emails** to her email and yours
+   (remove anything else, so only the two of you are allowed). One-time PIN login is on by default;
+   you can add Google as a login method too.
+4. In the Access application's details, copy the **Application Audience (AUD) Tag**.
+5. Note your **team domain**: **Zero Trust → Settings → Team name and domain**, e.g. `yourteam.cloudflareaccess.com`.
 
-### 6. Tell the website who's allowed
-Pages project → **Settings → Variables and Secrets**. Add these for **Production** (and also for **Preview**):
+### 5. Tell the site who's allowed
+**Workers & Pages → naksh-website → Settings → Variables and Secrets → Add** (type: Text):
 
 | Name | Value |
 |---|---|
@@ -76,12 +66,12 @@ Pages project → **Settings → Variables and Secrets**. Add these for **Produc
 | `ALLOWED_EMAILS` | `her@example.com, you@example.com` |
 | `ADMIN_EMAILS` | `you@example.com` |
 
-Then **Deployments → ⋯ on the latest → Retry deployment** so the settings take effect.
+Then **Deploy**. These settings are kept on every future deploy (`keep_vars` in `wrangler.jsonc`).
 
-> Keep the email list the same in the Access policy and in `ALLOWED_EMAILS`. Both must allow a person for them to get in.
+> Keep the emails the same in the Access policy and in `ALLOWED_EMAILS`. Both must allow a person for them to get in.
 
-### 7. Check it
-1. Open your `.pages.dev` address in a **private/incognito window**. You should see Cloudflare's login page.
+### 6. Check it
+1. Open your `naksh-website.<your-subdomain>.workers.dev` address in a **private/incognito window**. You should see Cloudflare's login page.
 2. Enter your email, type the code you receive, and the site opens.
 3. Try an email that isn't on the list. It should be refused.
 
@@ -123,6 +113,8 @@ public/              the website (what the browser loads)
   upload.html, upload.js
   site.js            names and wording
   styles.css
+wrangler.jsonc       Worker settings: storage bucket, run the login check before every file
+worker/index.js      Worker entry point: sends every request through the login check
 functions/           code that runs on Cloudflare's servers
   _middleware.js     login check + security headers for every request
   api/library.js     lists the videos and photos for the home page
@@ -134,6 +126,6 @@ lib/media.js         shared file-type rules
 ## Trying it on a computer (for developers)
 
 ```bash
-npx wrangler pages dev public --r2 MEDIA --binding DEV_SKIP_AUTH=true
+npx wrangler dev --var DEV_SKIP_AUTH:true
 ```
-Open http://localhost:8788. `DEV_SKIP_AUTH` only works on `localhost`; it is ignored on any real address.
+Open http://localhost:8787. `DEV_SKIP_AUTH` only works on `localhost`; it is ignored on any real address.
