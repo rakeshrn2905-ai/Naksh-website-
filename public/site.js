@@ -19,6 +19,29 @@ window.SITE = {
   // The heading above the videos and photos on the home page.
   rowTitle: "Our Moments",
 
+  // The big video at the top of the home page (its title, or the start of it).
+  featured: "Happy Birthday Bangari",
+  // The small line above the big title at the top.
+  featuredTag: "For your birthday",
+
+  // The order of the videos in the row (titles, or the start of each title).
+  // Anything not listed here comes after these, newest first.
+  order: [
+    "Happy Birthday Bangari",
+    "This is my first kiss",
+    "Still Remember Those",
+    "Long drives",
+    "Jam videos",
+    "Just youuuuu",
+    "This is how I see you",
+  ],
+
+  // Nicer names to show instead of the file names (left: file name, right: shown).
+  titles: {
+    "Happy Birthday Bangari 4K": "Happy Birthday, Bangari",
+    "Jam videos cinematic 4K v2": "Jam Sessions",
+  },
+
   // The line at the very bottom of the page.
   footerMessage: "Made with love, for you",
 };

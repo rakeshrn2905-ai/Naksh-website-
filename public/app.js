@@ -159,10 +159,22 @@
     }
     const data = await res.json();
     FOLDERS = (data.folders || []).filter((f) => f.items && f.items.length);
-    ITEMS = FOLDERS.flatMap((f) => f.items);
+    const all = FOLDERS.flatMap((f) => f.items);
+
+    // Order, featured video and display names come from site.js, matched by title.
+    const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const matches = (item, wanted) => { const w = norm(wanted); return !!w && norm(item.title).startsWith(w); };
+    const order = SITE.order || [];
+    const rank = (item) => { const i = order.findIndex((o) => matches(item, o)); return i < 0 ? order.length : i; };
+    const newest = (a, b) => (b.date || "").localeCompare(a.date || "") || (b.uploaded || "").localeCompare(a.uploaded || "");
+    ITEMS = all.sort((a, b) => rank(a) - rank(b) || newest(a, b));
+    const featuredByName = SITE.featured ? ITEMS.find((i) => matches(i, SITE.featured)) : null;
+    const titles = SITE.titles || {};
+    ITEMS.forEach((i) => { if (titles[i.title]) i.title = titles[i.title]; });
+
     VIDEOS = ITEMS.filter((i) => i.kind === "video");
     byKey = new Map(ITEMS.map((i) => [i.key, i]));
-    FEATURED = byKey.get(data.featured) || VIDEOS[0] || ITEMS[0] || null;
+    FEATURED = featuredByName || byKey.get(data.featured) || VIDEOS[0] || ITEMS[0] || null;
     IS_ADMIN = Boolean(data.isAdmin);
     // Forget saved progress for files that were removed.
     myList = myList.filter((k) => byKey.has(k));
@@ -420,7 +432,7 @@
       bg.addEventListener("playing", () => bg.classList.add("on"), { once: true });
       media.append(bg);
     }
-    content.append(el("div", "hero-tag", "Featured"));
+    content.append(el("div", "hero-tag", SITE.featuredTag || "Featured"));
     content.append(el("h1", null, titleOf(v)));
     if (v.description) content.append(el("p", null, v.description));
     const actions = el("div", "hero-actions");
