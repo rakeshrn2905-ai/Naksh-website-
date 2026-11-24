@@ -57,7 +57,14 @@
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m ? `${m}m${s ? " " + s + "s" : ""}` : `${s}s`;
   };
   const titleOf = (v) => v.title || fmtDate(v.date) || (v.kind === "photo" ? "Photo" : "Video");
-  const durationOf = (v) => (progress[v.key] && progress[v.key].d) || 0;
+  // Video lengths, remembered once any player has loaded them.
+  const durations = store.get("aoy.durations", {});
+  const rememberDuration = (v, d) => {
+    if (!d || !isFinite(d) || durations[v.key] === Math.round(d)) return;
+    durations[v.key] = Math.round(d);
+    store.set("aoy.durations", durations);
+  };
+  const durationOf = (v) => (progress[v.key] && progress[v.key].d) || durations[v.key] || 0;
   const hue = (str) => [...str].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
   const tileBg = (v) => {
     const h = hue(v.key);
@@ -92,11 +99,39 @@
       frameObserver.unobserve(e.target);
       const fv = el("video", "frame");
       Object.assign(fv, { muted: true, playsInline: true, preload: "metadata" });
-      fv.src = mediaUrl(e.target._video.key) + "#t=1.5";
-      fv.addEventListener("loadeddata", () => fv.classList.add("on"), { once: true });
+      const v = e.target._video;
+      fv.src = mediaUrl(v.key) + "#t=1.5";
+      fv.addEventListener("loadeddata", () => {
+        fv.classList.add("on");
+        rememberDuration(v, fv.duration);
+        if (IS_ADMIN && !v.poster) savePoster(v, fv);
+      }, { once: true });
       e.target.append(fv);
     });
   }, { rootMargin: "200px" });
+
+  // Owner only: a video uploaded without a thumbnail gets one made from this frame,
+  // so every viewer sees a proper picture from then on.
+  const posterTried = new Set();
+  function savePoster(v, fv) {
+    if (posterTried.has(v.key) || !fv.videoWidth) return;
+    posterTried.add(v.key);
+    try {
+      const w = Math.min(1280, fv.videoWidth);
+      const h = Math.round((w * fv.videoHeight) / fv.videoWidth);
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(fv, 0, 0, w, h);
+      c.toBlob(async (blob) => {
+        if (!blob || blob.size < 2000) return; // skip blank frames
+        const posterKey = v.key.replace(/\.[^.]+$/, ".poster.jpg");
+        const res = await fetch("/api/upload?" + new URLSearchParams({ action: "put", key: posterKey }), {
+          method: "PUT", body: blob, credentials: "same-origin", headers: { "X-Upload": "1" },
+        }).catch(() => null);
+        if (res && res.ok) v.poster = posterKey;
+      }, "image/jpeg", 0.82);
+    } catch {}
+  }
 
   function setStatus(msg) {
     const s = $("#status");
@@ -169,6 +204,137 @@
     });
   }
 
+  /* ── Hover preview card (computers only) ─────────────────── */
+  const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  let previewMuted = true;   // starts silent; the speaker button turns sound on for all previews
+  let pop = null, popTimer = null;
+
+  function iconBtn(cls, label, text) {
+    const b = el("button", "round-btn " + cls, text);
+    b.type = "button";
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    return b;
+  }
+  const SPEAKER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>';
+  const muteIcon = (m) => SPEAKER + (m
+    ? '<path d="m16 9 5 6m0-6-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>'
+    : '<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>');
+
+  function schedulePop(card, v, group) {
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => openPop(card, v, group), 500);
+  }
+  function cancelPop() { clearTimeout(popTimer); }
+  function closePop() {
+    clearTimeout(popTimer);
+    if (!pop) return;
+    const p = pop;
+    pop = null;
+    const vid = p.querySelector("video");
+    if (vid) { vid.pause(); vid.removeAttribute("src"); vid.load(); }
+    p.classList.remove("open");
+    setTimeout(() => p.remove(), 200);
+  }
+
+  function openPop(card, v, group) {
+    closePop();
+    if (!document.body.contains(card)) return;
+    const r = card.getBoundingClientRect();
+    const w = Math.min(Math.max(r.width * 1.55, 320), window.innerWidth - 32);
+    const mediaH = (w * 9) / 16;
+    const left = Math.max(16, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - 16 - w));
+    const top = Math.max(8, r.top + r.height / 2 - mediaH / 2);
+
+    const p = el("div", "pop");
+    p.style.width = w + "px";
+    p.style.left = left + window.scrollX + "px";
+    p.style.top = top + window.scrollY + "px";
+    p.style.transformOrigin = `${r.left + r.width / 2 - left}px ${r.top + r.height / 2 - top}px`;
+
+    const play = () => { closePop(); v.kind === "photo" ? openLightbox(v, group) : openPlayer(v); };
+
+    // Picture / playing preview
+    const media = el("div", "pop-media");
+    media.append(thumb(v, { eager: true }));
+    let vid = null;
+    if (v.kind === "video") {
+      vid = el("video", "pop-video");
+      Object.assign(vid, { muted: previewMuted, loop: true, playsInline: true, autoplay: true, preload: "auto" });
+      vid.src = mediaUrl(v.key);
+      vid.addEventListener("playing", () => vid.classList.add("on"), { once: true });
+      vid.addEventListener("loadedmetadata", () => { rememberDuration(v, vid.duration); fillMeta(); }, { once: true });
+      media.append(vid);
+      vid.play().catch(() => {});
+      const mute = iconBtn("pop-mute", "Sound on or off", "");
+      mute.innerHTML = muteIcon(previewMuted);
+      mute.onclick = (e) => {
+        e.stopPropagation();
+        previewMuted = !previewMuted;
+        vid.muted = previewMuted;
+        mute.innerHTML = muteIcon(previewMuted);
+        if (!previewMuted) vid.play().catch(() => {});
+      };
+      media.append(mute);
+    }
+    media.addEventListener("click", play);
+
+    // Buttons
+    const body = el("div", "pop-body");
+    const actions = el("div", "pop-actions");
+    const playBtn = iconBtn("primary", v.kind === "photo" ? "View photo" : resumeTime(v.key) ? "Resume" : "Play", "");
+    playBtn.append(el("span", "play-ico"));
+    playBtn.onclick = play;
+    actions.append(playBtn);
+    if (v.kind === "video") {
+      const listBtn = iconBtn("", inList(v.key) ? "Remove from My List" : "Add to My List", inList(v.key) ? "✓" : "+");
+      listBtn.onclick = () => {
+        toggleList(v.key);
+        listBtn.textContent = inList(v.key) ? "✓" : "+";
+        listBtn.title = inList(v.key) ? "Remove from My List" : "Add to My List";
+        listBtn.setAttribute("aria-label", listBtn.title);
+      };
+      actions.append(listBtn);
+    }
+    actions.append(el("span", "pop-spacer"));
+    if (v.kind === "video") {
+      const more = iconBtn("", "More info", "⌄");
+      more.onclick = () => { closePop(); openModal(v); };
+      actions.append(more);
+    }
+
+    const title = el("div", "pop-title", titleOf(v));
+    const meta = el("div", "pop-meta");
+    function fillMeta() {
+      meta.innerHTML = "";
+      if (v.kind === "video" && resumeTime(v.key)) {
+        meta.append(el("span", "pop-left", `${fmtDur(durationOf(v) - progress[v.key].t)} left`));
+      } else if (durationOf(v)) {
+        meta.append(el("span", null, fmtDur(durationOf(v))));
+      }
+      if (v.date && v.title) meta.append(el("span", null, fmtDate(v.date)));
+      meta.append(el("span", "pill", folderLabel(v.folder)));
+      if (v.kind === "photo") meta.append(el("span", null, "Photo"));
+    }
+    fillMeta();
+    body.append(actions, title, meta);
+    if (v.description) body.append(el("p", "pop-desc", v.description));
+    const p100 = v.kind === "video" ? pct(v.key) : 0;
+    if (p100 > 0) {
+      const bar = el("div", "progress"); const fill = el("span");
+      fill.style.width = p100 + "%"; bar.append(fill); media.append(bar);
+    }
+
+    p.append(media, body);
+    p.addEventListener("mouseleave", closePop);
+    document.body.append(p);
+    pop = p;
+    requestAnimationFrame(() => p.classList.add("open"));
+  }
+  window.addEventListener("scroll", closePop, { passive: true });
+  window.addEventListener("resize", closePop);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePop(); });
+
   /* ── Cards ───────────────────────────────────────────────── */
   function card(v, { sub, group } = {}) {
     const c = el("div", "card" + (v.kind === "photo" ? " is-photo" : ""));
@@ -191,24 +357,12 @@
         const bar = el("div", "progress"); const fill = el("span");
         fill.style.width = p + "%"; bar.append(fill); c.append(bar);
       }
-      // Short silent preview on hover (devices with a mouse only)
-      let timer, vid;
-      if (matchMedia("(hover: hover)").matches) {
-        c.addEventListener("mouseenter", () => {
-          timer = setTimeout(() => {
-            vid = el("video", "preview");
-            Object.assign(vid, { muted: true, loop: true, playsInline: true });
-            vid.src = mediaUrl(v.key);
-            vid.addEventListener("playing", () => vid.classList.add("on"), { once: true });
-            c.insertBefore(vid, info);
-            vid.play().catch(() => {});
-          }, 700);
-        });
-        c.addEventListener("mouseleave", () => {
-          clearTimeout(timer);
-          if (vid) { vid.pause(); vid.removeAttribute("src"); vid.load(); vid.remove(); vid = null; }
-        });
-      }
+    }
+
+    // On a computer, resting the mouse on a card opens the bigger preview card.
+    if (canHover) {
+      c.addEventListener("mouseenter", () => schedulePop(c, v, group));
+      c.addEventListener("mouseleave", cancelPop);
     }
 
     const open = () => (v.kind === "photo" ? openLightbox(v, group) : openModal(v));
@@ -346,11 +500,31 @@
   /* ── Video details ───────────────────────────────────────── */
   let modalVideo = null;
   function openModal(v) {
+    closePop();
+    stopModalPreview();
     modalVideo = v;
     const img = $("#modal-img");
     const media = $(".modal-media");
     if (v.poster) { img.src = mediaUrl(v.poster); img.hidden = false; media.style.background = ""; }
     else { img.hidden = true; img.removeAttribute("src"); media.style.background = tileBg(v); }
+
+    // The video itself plays at the top of the popup.
+    const pv = el("video", "modal-preview");
+    Object.assign(pv, { muted: previewMuted, loop: true, playsInline: true, autoplay: true, preload: "auto" });
+    pv.src = mediaUrl(v.key) + (resumeTime(v.key) ? `#t=${Math.floor(resumeTime(v.key))}` : "");
+    pv.addEventListener("playing", () => pv.classList.add("on"), { once: true });
+    pv.addEventListener("loadedmetadata", () => rememberDuration(v, pv.duration), { once: true });
+    pv.addEventListener("click", () => openPlayer(v));
+    const mute = iconBtn("modal-mute", "Sound on or off", "");
+    mute.innerHTML = muteIcon(previewMuted);
+    mute.onclick = () => {
+      previewMuted = !previewMuted;
+      pv.muted = previewMuted;
+      mute.innerHTML = muteIcon(previewMuted);
+      if (!previewMuted) pv.play().catch(() => {});
+    };
+    media.append(pv, mute);
+    pv.play().catch(() => {});
     $("#modal-title").textContent = titleOf(v);
 
     const meta = $("#modal-meta");
@@ -376,7 +550,14 @@
     document.body.classList.add("no-scroll");
     $("#modal-play").focus({ preventScroll: true });
   }
+  function stopModalPreview() {
+    document.querySelectorAll(".modal-media video, .modal-media .modal-mute").forEach((n) => {
+      if (n.tagName === "VIDEO") { n.pause(); n.removeAttribute("src"); n.load(); }
+      n.remove();
+    });
+  }
   function closeModal() {
+    stopModalPreview();
     $("#modal").hidden = true;
     if ($("#lightbox").hidden && $("#player").hidden) document.body.classList.remove("no-scroll");
     modalVideo = null;
@@ -432,8 +613,12 @@
   let current = null, lastSave = 0, idleTimer, nextTimer;
 
   function openPlayer(v) {
+    closePop();
     closeModal();
     cancelNext();
+    player.classList.remove("zoom-in"); void player.offsetWidth; player.classList.add("zoom-in");
+    video.muted = false;
+    video.addEventListener("loadedmetadata", () => rememberDuration(v, video.duration), { once: true });
     current = v;
     $("#player-title").textContent = titleOf(v);
     player.hidden = false;
