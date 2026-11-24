@@ -27,7 +27,7 @@ The site is only as secure as the email inboxes that can log in.
 
 ## One-time setup
 
-The site runs as a **Cloudflare Worker** (`naksh-website`), connected to this GitHub repo.
+The site runs as a **Cloudflare Worker** (`naksh`), connected to this GitHub repo.
 Every push to `master` rebuilds and redeploys it automatically. The storage bucket and
 the security settings are declared in `wrangler.jsonc`, so there's nothing to connect by hand.
 
@@ -41,14 +41,14 @@ Leave **Public access** turned **off**.
 
 ### 3. The website (Worker)
 **Workers & Pages → Create → Import a repository** → GitHub → this repo.
-- Worker name: **`naksh-website`** (must match `name` in `wrangler.jsonc`)
+- Worker name: **`naksh`** (must match `name` in `wrangler.jsonc`)
 - Branch: **`master`**
 - Build command: *(empty)*. Deploy command: **`npx wrangler deploy`** (the default)
 
 Until the login is configured, every address shows *"This site is private. The login isn't set up yet."*
 
 ### 4. Turn on the login (Cloudflare Access)
-1. **Workers & Pages → naksh-website → Settings → Domains & Routes**.
+1. **Workers & Pages → naksh → Settings → Domains & Routes**.
 2. Next to the **workers.dev** address, choose **Enable Cloudflare Access**.
 3. Choose **Manage Cloudflare Access**. In the policy, set **Include → Emails** to her email and yours
    (remove anything else, so only the two of you are allowed). One-time PIN login is on by default;
@@ -57,7 +57,7 @@ Until the login is configured, every address shows *"This site is private. The l
 5. Note your **team domain**: **Zero Trust → Settings → Team name and domain**, e.g. `yourteam.cloudflareaccess.com`.
 
 ### 5. Tell the site who's allowed
-**Workers & Pages → naksh-website → Settings → Variables and Secrets → Add** (type: Text):
+**Workers & Pages → naksh → Settings → Variables and Secrets → Add** (type: Text):
 
 | Name | Value |
 |---|---|
@@ -71,7 +71,7 @@ Then **Deploy**. These settings are kept on every future deploy (`keep_vars` in 
 > Keep the emails the same in the Access policy and in `ALLOWED_EMAILS`. Both must allow a person for them to get in.
 
 ### 6. Check it
-1. Open your `naksh-website.<your-subdomain>.workers.dev` address in a **private/incognito window**. You should see Cloudflare's login page.
+1. Open your `naksh.allouryesterdays.workers.dev` address in a **private/incognito window**. You should see Cloudflare's login page.
 2. Enter your email, type the code you receive, and the site opens.
 3. Try an email that isn't on the list. It should be refused.
 
