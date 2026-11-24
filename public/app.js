@@ -56,7 +56,7 @@
     const m = Math.floor(sec / 60), s = Math.round(sec % 60);
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m ? `${m}m${s ? " " + s + "s" : ""}` : `${s}s`;
   };
-  const titleOf = (v) => v.title || fmtDate(v.date) || (v.kind === "photo" ? "Photo" : "Video");
+  const titleOf = (v) => v.title || (v.kind === "photo" ? "A little moment" : "Our moment");
   // Video lengths, remembered once any player has loaded them.
   const durations = store.get("aoy.durations", {});
   const rememberDuration = (v, d) => {
@@ -312,8 +312,6 @@
       } else if (durationOf(v)) {
         meta.append(el("span", null, fmtDur(durationOf(v))));
       }
-      if (v.date && v.title) meta.append(el("span", null, fmtDate(v.date)));
-      meta.append(el("span", "pill", folderLabel(v.folder)));
       if (v.kind === "photo") meta.append(el("span", null, "Photo"));
     }
     fillMeta();
@@ -345,7 +343,7 @@
 
     const info = el("div", "card-info");
     info.append(el("div", "card-title", titleOf(v)));
-    const subText = sub ?? (v.title && v.date ? fmtDate(v.date) : "");
+    const subText = sub ?? "";
     if (subText) info.append(el("div", "card-sub", subText));
     c.append(info);
 
@@ -422,7 +420,7 @@
       bg.addEventListener("playing", () => bg.classList.add("on"), { once: true });
       media.append(bg);
     }
-    content.append(el("div", "hero-tag", [folderLabel(v.folder), v.date ? fmtDate(v.date) : ""].filter(Boolean).join(" · ")));
+    content.append(el("div", "hero-tag", "Featured"));
     content.append(el("h1", null, titleOf(v)));
     if (v.description) content.append(el("p", null, v.description));
     const actions = el("div", "hero-actions");
@@ -455,7 +453,7 @@
     const sections = [
       row("Continue Watching", "", continuing, (v) => ({ sub: `${fmtDur(durationOf(v) - progress[v.key].t)} left` })),
       row("My List", "", listed),
-      ...FOLDERS.map((f) => row(folderLabel(f.name), caption(f.name), f.items)),
+      row(SITE.rowTitle || "Our Moments", "", ITEMS),
     ];
     sections.filter(Boolean).forEach((s) => rows.append(s));
   }
@@ -479,7 +477,7 @@
     } else {
       const q = query.toLowerCase();
       list = ITEMS.filter((v) =>
-        [v.title, v.description, v.folder, caption(v.folder), v.date, fmtDate(v.date)].join(" ").toLowerCase().includes(q)
+        [v.title, v.description].join(" ").toLowerCase().includes(q)
       );
       title = `Results for “${query}”`;
       empty = "Nothing matches that search.";
@@ -529,20 +527,18 @@
 
     const meta = $("#modal-meta");
     meta.innerHTML = "";
-    if (v.date && v.title) meta.append(el("span", null, fmtDate(v.date)));
     if (durationOf(v)) meta.append(el("span", null, fmtDur(durationOf(v))));
-    meta.append(el("span", "pill", folderLabel(v.folder)));
 
     $("#modal-desc").textContent = v.description || "";
     $("#modal-desc").hidden = !v.description;
     $("#modal-play-label").textContent = resumeTime(v.key) ? "Resume" : "Play";
     updateListBtn();
 
-    const more = VIDEOS.filter((x) => x.folder === v.folder && x.key !== v.key);
+    const more = VIDEOS.filter((x) => x.key !== v.key);
     const moreBox = $("#modal-more");
     moreBox.innerHTML = "";
     more.forEach((x) => moreBox.append(card(x)));
-    $("#modal-more-title").textContent = `More from ${folderLabel(v.folder)}`;
+    $("#modal-more-title").textContent = "More moments";
     $("#modal-more-title").hidden = !more.length;
 
     $("#modal").hidden = false;
@@ -569,7 +565,7 @@
   /* ── Photo viewer ────────────────────────────────────────── */
   let lbList = [], lbIndex = 0, lbTouchX = null;
   function openLightbox(v, group) {
-    lbList = group && group.length ? group : ITEMS.filter((x) => x.kind === "photo" && x.folder === v.folder);
+    lbList = group && group.length ? group : ITEMS.filter((x) => x.kind === "photo");
     lbIndex = Math.max(0, lbList.indexOf(v));
     $("#lightbox").hidden = false;
     document.body.classList.add("no-scroll");
@@ -582,7 +578,7 @@
     $("#lb-img").src = mediaUrl(v.key);
     $("#lb-img").alt = titleOf(v);
     $("#lb-title").textContent = titleOf(v);
-    $("#lb-sub").textContent = [v.title && v.date ? fmtDate(v.date) : "", v.description, lbList.length > 1 ? `${lbIndex + 1} of ${lbList.length}` : ""]
+    $("#lb-sub").textContent = [v.description, lbList.length > 1 ? `${lbIndex + 1} of ${lbList.length}` : ""]
       .filter(Boolean).join(" · ");
     $("#lb-prev").hidden = $("#lb-next").hidden = lbList.length < 2;
     // Load the next photo in advance so swiping feels instant.
@@ -714,7 +710,7 @@
 
   document.querySelectorAll("[data-site-name]").forEach((n) => (n.textContent = SITE.siteName || "All Our Yesterdays"));
   document.title = SITE.siteName || "All Our Yesterdays";
-  $("#footer-message").textContent = SITE.welcomeMessage || "Made with love";
+  $("#footer-message").textContent = SITE.footerMessage || "Made with love, for you";
 
   document.querySelectorAll("[data-go]").forEach((a) =>
     a.addEventListener("click", (e) => {

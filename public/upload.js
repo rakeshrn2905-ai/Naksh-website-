@@ -220,7 +220,6 @@
   $("#up-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const folder = $("#up-folder").value.trim();
-    if (!folder) { $("#up-folder").focus(); return; }
     const go = $("#up-go");
     go.disabled = true;
     $("#up-files").disabled = true;
@@ -298,22 +297,20 @@
     const dl = $("#up-folders");
     dl.innerHTML = "";
     const names = new Set(folders.map((f) => f.name).filter(Boolean));
-    for (let y = 2015; y <= new Date().getFullYear(); y++) names.add(String(y));
     [...names].sort().forEach((n) => { const o = el("option"); o.value = n; dl.append(o); });
 
     box.innerHTML = "";
     $("#up-existing-empty").hidden = folders.some((f) => f.items.length);
     folders.forEach((f) => {
       const sec = el("div", "up-folder");
-      sec.append(el("h3", null, `${f.name || "More"} · ${f.items.length}`));
       const ul = el("ul", "up-files");
       f.items.forEach((it) => {
         const li = el("li");
-        const a = el("a", null, (it.kind === "video" ? "▶ " : "◻ ") + (it.title || it.date || it.key));
+        const a = el("a", null, (it.kind === "video" ? "▶ " : "◻ ") + (it.title || (it.kind === "video" ? "Untitled video" : "Untitled photo")));
         a.href = mediaUrl(it.key);
         a.target = "_blank";
         a.rel = "noopener";
-        const meta = el("span", "up-meta", [it.date, mb(it.size)].filter(Boolean).join(" · "));
+        const meta = el("span", "up-meta", mb(it.size));
         const del = el("button", "btn btn-ghost btn-sm", "Delete");
         del.type = "button";
         let armed = false;

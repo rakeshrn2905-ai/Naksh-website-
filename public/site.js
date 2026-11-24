@@ -8,7 +8,7 @@ window.SITE = {
 
   // Welcome screen, shown once each time she opens the site (after logging in).
   welcomeTitle: "Happy Birthday, love",
-  welcomeMessage: "Eleven years of yesterdays, and every one of them was better because of you.",
+  welcomeMessage: "I made this just for you.",
 
   // Optional: a little question she answers before coming in, just for fun.
   // (The real protection is the Cloudflare login, not this.)
@@ -16,8 +16,9 @@ window.SITE = {
   question: "",
   answer: "",
 
-  // A short line under each row. The key is the folder name used when uploading.
-  folderCaptions: {
-    "2015": "The year it all began",
-  },
+  // The heading above the videos and photos on the home page.
+  rowTitle: "Our Moments",
+
+  // The line at the very bottom of the page.
+  footerMessage: "Made with love, for you",
 };
