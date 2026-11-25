@@ -481,3 +481,5 @@ a.btn { width: max-content; }
 .reason:focus-visible { outline: none; }
 .reason:focus-visible .reason-face { outline: 2px solid var(--gold); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .reason-inner { transition: none; } }
+.letter-sign { white-space: pre-line; }
+.letter { background-color: #0a070b; }

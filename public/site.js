@@ -44,15 +44,18 @@ window.SITE = {
 
   // ── A letter for her ──────────────────────────────────────────
   // Opens from "A letter for you" at the top. Leave paragraphs empty ([]) to hide it.
-  // SAMPLE WORDING: replace with your own.
   letter: {
-    title: "For you, on your birthday",
+    title: "My Bangari,",
     paragraphs: [
-      "I wanted to give you something you could come back to, a little place that is only ours.",
-      "Every video here is a moment I never want to forget. Some of them are silly, some of them are quiet, and all of them are better because you are in them.",
-      "Thank you for every yesterday. I can't wait for all of our tomorrows.",
+      "There are some things I can never say properly on camera, so I'm writing them here.",
+      "We started by taking blurry selfies, laughing at nothing, with no idea where life would take us. I didn't know then that I was looking at my whole future.",
+      "You're the first person I want to tell everything to: the good news, the bad days and the stupid jokes. You've seen me at my worst and still chose to stay. I don't think I'll ever stop being amazed by that.",
+      "I love the little things most. The way you laugh with your whole face. The way you fall asleep anywhere, like the world can wait. The way you dance when you think no one is watching, and the way you look at me like I'm someone special.",
+      "So here's my promise. I'll keep choosing you every day, in every city and every version of our lives.",
+      "Thank you for being my best friend, my safe place and my home.",
+      "You are, and always will be, my favourite person.",
     ],
-    signoff: "Always yours",
+    signoff: "Forever yours,\nRakesh",
   },
 
   // ── Reasons I love you ────────────────────────────────────────
