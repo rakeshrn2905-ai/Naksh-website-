@@ -206,6 +206,7 @@
       if (ok) {
         try { sessionStorage.setItem(KEY_WELCOMED, "1"); } catch {}
         $("#gate").hidden = true;
+        celebrate();
         onOpen();
       } else {
         $("#gate-error").textContent = "Not quite. Try again ❤";
@@ -214,6 +215,142 @@
         input.select();
       }
     });
+  }
+
+  /* ── Birthday confetti (when she taps "Come in") ─────────── */
+  function celebrate() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cv = $("#confetti");
+    const ctx = cv.getContext("2d");
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = window.innerWidth, H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    ctx.scale(dpr, dpr);
+    cv.hidden = false;
+    const colors = ["#ffd98a", "#f4b860", "#ffe9bf", "#e8a24a", "#ff8fa3", "#ffffff"];
+    const count = Math.round(Math.min(180, W / 6));
+    const parts = Array.from({ length: count }, (_, i) => ({
+      x: Math.random() * W,
+      y: -20 - Math.random() * H * 0.6,
+      r: 3 + Math.random() * 5,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: 1.6 + Math.random() * 2.6,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.12,
+      sway: Math.random() * Math.PI * 2,
+      heart: i % 4 === 0,
+      color: colors[i % colors.length],
+    }));
+    const heart = (s) => {
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.3);
+      ctx.bezierCurveTo(-s, -s * 0.4, -s * 0.5, -s, 0, -s * 0.45);
+      ctx.bezierCurveTo(s * 0.5, -s, s, -s * 0.4, 0, s * 0.3);
+      ctx.fill();
+    };
+    const start = performance.now(), dur = 4800;
+    function frame(now) {
+      const t = now - start;
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalAlpha = t > dur - 1000 ? Math.max(0, (dur - t) / 1000) : 1;
+      for (const p of parts) {
+        p.sway += 0.03;
+        p.x += p.vx + Math.sin(p.sway) * 0.6;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if (p.heart) heart(p.r * 1.6);
+        else { ctx.beginPath(); ctx.arc(0, 0, p.r * 0.7, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+      }
+      if (t < dur) requestAnimationFrame(frame);
+      else { ctx.clearRect(0, 0, W, H); cv.hidden = true; }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ── A letter for her ────────────────────────────────────── */
+  const LETTER = SITE.letter && (SITE.letter.paragraphs || []).filter(Boolean).length ? SITE.letter : null;
+  let letterTimer = null;
+  function openLetter() {
+    if (!LETTER) return;
+    closePop();
+    const body = $("#letter-body");
+    body.innerHTML = "";
+    $("#letter-title").textContent = LETTER.title || "";
+    $("#letter-sign").textContent = LETTER.signoff || "";
+    const words = [];
+    LETTER.paragraphs.filter(Boolean).forEach((text) => {
+      const para = el("p");
+      text.split(/(\s+)/).forEach((w) => {
+        if (/^\s+$/.test(w)) { para.append(w); return; }
+        const s = el("span", "lw", w);
+        para.append(s);
+        words.push(s);
+      });
+      body.append(para);
+    });
+    const box = $("#letter");
+    box.classList.remove("all-shown", "done");
+    box.hidden = false;
+    box.scrollTop = 0;
+    document.body.classList.add("no-scroll");
+    $("#letter-skip").hidden = false;
+    // Words appear one after another, like it is being written for her.
+    let i = 0;
+    const step = Math.max(45, Math.min(140, 9000 / Math.max(1, words.length)));
+    clearInterval(letterTimer);
+    const finish = () => { clearInterval(letterTimer); box.classList.add("done"); $("#letter-skip").hidden = true; };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { box.classList.add("all-shown"); finish(); }
+    else letterTimer = setInterval(() => {
+      if (i < words.length) words[i++].classList.add("in");
+      else finish();
+    }, step);
+    $("#letter-skip").onclick = () => { box.classList.add("all-shown"); finish(); };
+    $("#letter-close").focus({ preventScroll: true });
+  }
+  function closeLetter() {
+    clearInterval(letterTimer);
+    $("#letter").hidden = true;
+    if ($("#modal").hidden && $("#player").hidden && $("#lightbox").hidden) document.body.classList.remove("no-scroll");
+  }
+  $("#letter-close").onclick = closeLetter;
+  $("#letter").addEventListener("click", (e) => { if (e.target.id === "letter") closeLetter(); });
+
+  /* ── Reasons I love you (cards that flip) ────────────────── */
+  function reasonsRow() {
+    const reasons = (SITE.reasons || []).filter(Boolean);
+    if (!reasons.length) return null;
+    const r = el("section", "row reasons");
+    const head = el("div", "row-head");
+    head.append(el("h2", null, SITE.reasonsTitle || "Reasons I love you"));
+    head.append(el("p", "row-caption", "Tap a card"));
+    r.append(head);
+    const track = el("div", "row-track");
+    reasons.forEach((text, i) => {
+      const b = el("button", "reason");
+      b.type = "button";
+      b.setAttribute("aria-pressed", "false");
+      b.setAttribute("aria-label", `Reason ${i + 1}`);
+      const inner = el("span", "reason-inner");
+      const front = el("span", "reason-face reason-front");
+      front.append(el("span", "reason-heart", "♥"), el("span", "reason-num", `Reason #${i + 1}`));
+      const back = el("span", "reason-face reason-back", text);
+      inner.append(front, back);
+      b.append(inner);
+      b.onclick = () => {
+        const on = b.classList.toggle("flipped");
+        b.setAttribute("aria-pressed", String(on));
+        b.setAttribute("aria-label", on ? text : `Reason ${i + 1}`);
+      };
+      track.append(b);
+    });
+    r.append(track);
+    return r;
   }
 
   /* ── Hover preview card (computers only) ─────────────────── */
@@ -443,6 +580,11 @@
       const more = el("button", "btn btn-ghost", "More info");
       more.onclick = () => openModal(v);
       actions.append(play, more);
+      if (LETTER) {
+        const lb = el("button", "btn btn-ghost btn-letter", "💌  A letter for you");
+        lb.onclick = openLetter;
+        actions.append(lb);
+      }
     } else {
       play.textContent = "View photo";
       play.onclick = () => openLightbox(v);
@@ -467,6 +609,7 @@
       row("My List", "", listed),
       row(SITE.rowTitle || "Our Moments", "", ITEMS),
     ];
+    sections.push(reasonsRow());
     sections.filter(Boolean).forEach((s) => rows.append(s));
   }
 
@@ -717,6 +860,8 @@
     if (!ok) return;
     setStatus("");
     $("#nav-upload").hidden = !IS_ADMIN;
+    $("#nav-letter").hidden = !LETTER;
+    $("#nav-letter").onclick = (e) => { e.preventDefault(); openLetter(); };
     showView("home");
   }
 
@@ -759,6 +904,7 @@
       return;
     }
     if (e.key !== "Escape") return;
+    if (!$("#letter").hidden) { closeLetter(); return; }
     if (!player.hidden) closePlayer();
     else if (!$("#modal").hidden) closeModal();
   });

@@ -42,6 +42,31 @@ window.SITE = {
     "Jam videos cinematic 4K v2": "Jam Sessions",
   },
 
+  // ── A letter for her ──────────────────────────────────────────
+  // Opens from "A letter for you" at the top. Leave paragraphs empty ([]) to hide it.
+  // SAMPLE WORDING: replace with your own.
+  letter: {
+    title: "For you, on your birthday",
+    paragraphs: [
+      "I wanted to give you something you could come back to, a little place that is only ours.",
+      "Every video here is a moment I never want to forget. Some of them are silly, some of them are quiet, and all of them are better because you are in them.",
+      "Thank you for every yesterday. I can't wait for all of our tomorrows.",
+    ],
+    signoff: "Always yours",
+  },
+
+  // ── Reasons I love you ────────────────────────────────────────
+  // Each one is a card she taps to flip. Leave the list empty ([]) to hide the row.
+  // SAMPLE WORDING: replace with your own.
+  reasonsTitle: "Reasons I love you",
+  reasons: [
+    "The way you laugh at your own jokes before you finish them.",
+    "How you make every ordinary day feel like a little adventure.",
+    "Your kindness, to everyone, all the time.",
+    "The way you look at me when you think I'm not watching.",
+    "Because home is wherever you are.",
+  ],
+
   // The line at the very bottom of the page.
   footerMessage: "Made with love, for you",
 };

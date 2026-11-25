@@ -9,7 +9,7 @@
   <title>All Our Yesterdays</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -35,6 +35,7 @@
       <nav class="nav-links">
         <a href="#" data-go="home" class="active">Home</a>
         <a href="#" data-go="list">My List</a>
+        <a href="#" id="nav-letter" hidden>Letter</a>
         <a href="upload.html" id="nav-upload" hidden>Upload</a>
       </nav>
       <div class="search">
@@ -91,6 +92,19 @@
       <div id="lb-sub" class="lb-sub"></div>
     </div>
   </div>
+
+  <!-- A letter for her -->
+  <div id="letter" class="letter" hidden role="dialog" aria-modal="true" aria-labelledby="letter-title">
+    <button id="letter-close" class="icon-btn letter-close" aria-label="Close the letter">✕</button>
+    <article class="letter-paper">
+      <h2 id="letter-title" class="letter-title"></h2>
+      <div id="letter-body" class="letter-body"></div>
+      <p id="letter-sign" class="letter-sign"></p>
+    </article>
+    <button id="letter-skip" class="btn btn-ghost btn-sm letter-skip">Show it all</button>
+  </div>
+
+  <canvas id="confetti" class="confetti" aria-hidden="true" hidden></canvas>
 
   <!-- Video player -->
   <div id="player" class="player" hidden>
