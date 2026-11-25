@@ -323,7 +323,9 @@
 
   /* ── Reasons I love you (cards that flip) ────────────────── */
   function reasonsRow() {
-    const reasons = (SITE.reasons || []).filter(Boolean);
+    const reasons = (SITE.reasons || [])
+      .map((r) => (typeof r === "string" ? { front: "", back: r } : r))
+      .filter((r) => r && r.back);
     if (!reasons.length) return null;
     const r = el("section", "row reasons");
     const head = el("div", "row-head");
@@ -331,21 +333,23 @@
     head.append(el("p", "row-caption", "Tap a card"));
     r.append(head);
     const track = el("div", "row-track");
-    reasons.forEach((text, i) => {
+    reasons.forEach((reason, i) => {
+      const text = reason.back;
+      const label = reason.front || `Reason #${i + 1}`;
       const b = el("button", "reason");
       b.type = "button";
       b.setAttribute("aria-pressed", "false");
-      b.setAttribute("aria-label", `Reason ${i + 1}`);
+      b.setAttribute("aria-label", label);
       const inner = el("span", "reason-inner");
       const front = el("span", "reason-face reason-front");
-      front.append(el("span", "reason-heart", "♥"), el("span", "reason-num", `Reason #${i + 1}`));
+      front.append(el("span", "reason-heart", "♥"), el("span", "reason-num", label));
       const back = el("span", "reason-face reason-back", text);
       inner.append(front, back);
       b.append(inner);
       b.onclick = () => {
         const on = b.classList.toggle("flipped");
         b.setAttribute("aria-pressed", String(on));
-        b.setAttribute("aria-label", on ? text : `Reason ${i + 1}`);
+        b.setAttribute("aria-label", on ? text : label);
       };
       track.append(b);
     });

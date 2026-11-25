@@ -57,14 +57,17 @@ window.SITE = {
 
   // ── Reasons I love you ────────────────────────────────────────
   // Each one is a card she taps to flip. Leave the list empty ([]) to hide the row.
-  // SAMPLE WORDING: replace with your own.
   reasonsTitle: "Reasons I love you",
+  // Each card shows "front" first; she taps it to flip and read "back".
   reasons: [
-    "The way you laugh at your own jokes before you finish them.",
-    "How you make every ordinary day feel like a little adventure.",
-    "Your kindness, to everyone, all the time.",
-    "The way you look at me when you think I'm not watching.",
-    "Because home is wherever you are.",
+    { front: "Your smile", back: "Your smile still makes my whole day, just like it did in 2017." },
+    { front: "Your laugh", back: "Your laugh is my favourite sound in the world, even through a phone screen." },
+    { front: "The long drives", back: "Every slow drive with you felt shorter than it should have, because I never wanted it to end." },
+    { front: "Kumbhakarna mode", back: "Even when you fall asleep anywhere (the auto, the bed, mid-conversation), you're the cutest thing I've ever seen." },
+    { front: "Your silly side", back: "Your dances, your jam videos, your funny faces: you make every ordinary day fun." },
+    { front: "Your patience", back: "You've stayed strong through the distance and believed in us, even when I was far away." },
+    { front: "Simply you", back: "Because you're my Bangari: my best friend, my home, and my favourite person." },
+    { front: "One more…", back: "And the best reason? I get to keep finding new ones, every year, for the rest of our lives." },
   ],
 
   // The line at the very bottom of the page.
